@@ -39,8 +39,8 @@ export const messageIds: Record<'tj' | 'ru', MessageI> = {
       economy: 104,
       symbolic: 106,
     },
-    codeReal: 52, // 52 face code
-    codeFake: 8, // 8 real code
+    codeReal: 8, // 8 real code (haqiqiy kod)
+    codeFake: 52, // 52 fake code (yolg'on kod)
     codeUsed: 54,
     codeUsageLimit: 40,
     auth: { requestName: 56 },
@@ -55,9 +55,9 @@ export const messageIds: Record<'tj' | 'ru', MessageI> = {
       symbolic: 107,
     },
     auth: { requestName: 57 },
-    codeReal: 9, // 53 face code
-    codeFake: 53, // 9 real code
-    codeUsed: 55,
+    codeReal: 9, // 9 real code (haqiqiy kod) - channel'dagi to'g'ri ID
+    codeFake: 55, // 55 fake code (yolg'on kod) - channel'dagi to'g'ri ID
+    codeUsed: 53, // 53 used code (ishlatilgan kod)
     codeUsageLimit: 41,
   },
 };

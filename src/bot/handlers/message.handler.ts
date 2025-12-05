@@ -11,7 +11,7 @@ import { Settings } from '../../db/entities/settings.entity';
 import { BotLanguage } from '../core/middleware';
 import { Gift } from '../../db/entities/gift.entity';
 import { phoneCheck } from '../helpers/util';
-import { IsNull, In } from 'typeorm';
+import { IsNull, In, Or } from 'typeorm';
 
 type GiftTier = 'premium' | 'standard' | 'economy' | 'symbolic';
 
@@ -143,13 +143,13 @@ async function registerUserPhoneNumber(ctx: MyContext) {
 // ======================
 async function checkCode(ctx: MyContext) {
   // Session'dan tilni o'rnatish
-  const lang = (ctx.session.user.lang || ctx.i18n.languageCode || 'tj') as BotLanguage;
+  // Avval session'dan tilni olish, keyin i18n'dan, oxirida default 'tj'
+  let lang = ctx.session.user.lang as BotLanguage;
+  if (!lang || (lang !== 'tj' && lang !== 'ru')) {
+    lang = (ctx.i18n.languageCode as BotLanguage) || 'tj';
+  }
+  // Tilni i18n'ga o'rnatish
   ctx.i18n.locale(lang);
-
-  const MESSAGES: Record<BotLanguage, Record<string, string>> = {
-    tj: { invalidFormat: '❌ Noto\'g\'ri kod formati kiritdingiz.' },
-    ru: { invalidFormat: '❌ Вы ввели неверный код.' },
-  };
 
   if (ctx.session.is_editable_message && ctx.session.main_menu_message) {
     await ctx.api.editMessageReplyMarkup(ctx.message!.chat.id, ctx.session.main_menu_message.message_id, { reply_markup: { inline_keyboard: [] } });
@@ -180,32 +180,40 @@ async function checkCode(ctx: MyContext) {
   if (/^[A-Z]{6}\d{4}$/.test(rawText)) rawText = `${rawText.slice(0, 6)}-${rawText.slice(6)}`;
 
   if (!/^[A-Z]{6}-\d{4}$/.test(rawText)) {
-    return ctx.reply(MESSAGES[lang]?.invalidFormat || MESSAGES.tj.invalidFormat, { parse_mode: 'HTML' });
+    return ctx.reply(ctx.i18n.t('validation.invalidFormat'), { parse_mode: 'HTML' });
   }
 
-  const normalized = norm(rawText);
-  const hy = hyphenize(rawText);
+  const normalized = norm(rawText); // VSKFJY4331 (barcha belgilar olib tashlangan)
+  const hy = hyphenize(rawText); // VSKFJY-4331 (agar - bo'lmasa qo'shiladi)
+  const withoutHyphen = rawText.replace(/-/g, ''); // VSKFJY4331
+  const normalizedWithHyphen = normalized.length >= 10 ? normalized.slice(0, 6) + '-' + normalized.slice(6) : normalized; // VSKFJY-4331
+
+  // Barcha variantlarni to'plab, unique qilish
+  const codeVariants = [
+    rawText,           // JKTRMS-8094
+    hy,                // JKTRMS-8094
+    normalizedWithHyphen, // JKTRMS-8094
+    withoutHyphen,     // JKTRMS8094
+    normalized,        // JKTRMS8094
+  ].filter((v, i, arr) => arr.indexOf(v) === i); // Duplikatlarni olib tashlash
 
   // AVVAL WINNERS DAN TEKSHIRISH (g'olib kodlar muhimroq)
+  // TypeORM'da where array shaklida tekshirish (In operatori bilan)
   let winner = await winnerRepository.findOne({
-    where: [
-      { value: rawText, deletedAt: IsNull() },
-      { value: hy, deletedAt: IsNull() },
-      { value: normalized, deletedAt: IsNull() },
-      { value: rawText.replace(/-/g, ''), deletedAt: IsNull() },
-    ] as any,
+    where: codeVariants.map(v => ({
+      value: v,
+      deletedAt: IsNull(),
+    })) as any,
   });
 
   // Agar winners da topilmasa, codes dan tekshirish
   let code = null;
   if (!winner) {
     code = await codeRepository.findOne({
-      where: [
-        { value: rawText, deletedAt: IsNull() },
-        { value: hy, deletedAt: IsNull() },
-        { value: normalized, deletedAt: IsNull() },
-        { value: rawText.replace(/-/g, ''), deletedAt: IsNull() },
-      ] as any,
+      where: codeVariants.map(v => ({
+        value: v,
+        deletedAt: IsNull(),
+      })) as any,
     });
   }
 
@@ -267,13 +275,21 @@ async function checkCode(ctx: MyContext) {
   }
 
   // Oddiy kod topilgan bo'lsa
+  // Agar code null bo'lsa, bu holat allaqachon 214-qatorda tekshirilgan
+  // Demak, bu yerda code har doim mavjud
   if (!code) {
+    // Bu holat hech qachon bo'lmaydi, lekin TypeScript uchun
     return ctx.api.forwardMessage(ctx.from.id, FORWARD_MESSAGES_CHANNEL_ID, messageIds[lang].codeFake);
   }
-
+  
   // BIR MARTALIK TEKSHIRISH - agar kod ishlatilgan bo'lsa
   if (code.isUsed) {
-    return ctx.api.forwardMessage(ctx.from.id, FORWARD_MESSAGES_CHANNEL_ID, messageIds[lang].codeUsed);
+    // Agar kod o'z foydalanuvchisi tomonidan ishlatilgan bo'lsa, yana ishlatishga ruxsat beramiz
+    // Lekin agar boshqa foydalanuvchi tomonidan ishlatilgan bo'lsa, "ishlatilgan" xabarini yuboramiz
+    if (code.usedById && code.usedById !== ctx.session.user.db_id) {
+      return ctx.api.forwardMessage(ctx.from.id, FORWARD_MESSAGES_CHANNEL_ID, messageIds[lang].codeUsed);
+    }
+    // Agar kod o'z foydalanuvchisi tomonidan ishlatilgan bo'lsa, davom etamiz (yangi kod sifatida)
   }
 
   // Atomik operatsiya bilan kodni ishlatilgan deb belgilash
@@ -295,7 +311,7 @@ async function checkCode(ctx: MyContext) {
 
   // Oddiy kod - hech qanday sovg'a yo'q
   // Agar kod CodeModel da bo'lsa va giftId bo'lsa, gift topamiz
-  if (code && code.giftId) {
+  if (code.giftId) {
     const gift = await giftRepository.findOne({
       where: { _id: code.giftId, deletedAt: IsNull() } as any,
     });

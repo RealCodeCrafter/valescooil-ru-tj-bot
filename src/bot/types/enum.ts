@@ -19,6 +19,8 @@ export enum CallbackActions {
   ADMIN_CLEAR_CODES = "admin_clear_codes",
   ADMIN_CLEAR_WINNERS = "admin_clear_winners",
   ADMIN_UPLOAD_IMAGES = "admin_upload_images",
+  ADMIN_VIEW_CODES = "admin_view_codes",
+  ADMIN_VIEW_WINNERS = "admin_view_winners",
 }
 
 export enum Operator {

@@ -10,11 +10,12 @@
     "codeWithGift": "Поздравляем Вас!!! Ваш проверочный код является призовым!!!\n\nДля получения приза обращайтесь по номеру +998 99 999 99 99\n\nПокупайте больше продуктов брэнда VALESCO и участвуйте в призовой акции от VALESCO LUBRICANTS! Для большей информации о продукции зайдите на наш сайт (http://www.valescooil.com/).\n\nБлагодарим за выбор!"
   },
   "validation": {
-    "invalidPhoneNumber": "Неправильный номер телефона"
+    "invalidPhoneNumber": "Неправильный номер телефона",
+    "invalidFormat": "❌ Вы ввели неверный код."
   },
   "auth": {
     "requestName": "Напишите свое имя",
-    "requestChooseLang": "Tilni tanlang\nВыберите язык",
+    "requestChooseLang": "Выберите язык",
     "requestPhoneNumber": "Отправьте номер телефона",
     "sendContact": "Отправить контакт"
   },

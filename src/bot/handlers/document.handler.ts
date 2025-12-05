@@ -65,9 +65,21 @@ async function bulkInsert(
       const clean = normalize(c);
       set.add(clean);
       maxId++;
+      // Kodlarni doim XXXXXX-XXXX formatida saqlash (6 harf + 4 raqam)
+      // Agar kod 10 belgidan kam bo'lsa, formatlashni o'tkazib yuboramiz
+      let formattedValue = clean;
+      if (clean.length === 10) {
+        // 10 belgi bo'lsa: RQSTNB7729 -> RQSTNB-7729
+        formattedValue = clean.slice(0, 6) + '-' + clean.slice(6);
+      } else if (clean.length > 10) {
+        // 10 dan ko'p bo'lsa: faqat birinchi 10 belgini olamiz
+        formattedValue = clean.slice(0, 6) + '-' + clean.slice(6, 10);
+      }
+      // Agar 10 dan kam bo'lsa, o'zgartirmasdan saqlaymiz
+      
       newCodes.push({
             id: maxId,
-            value: clean.length >= 10 ? clean.slice(0, 6) + '-' + clean.slice(6) : clean,
+            value: formattedValue,
             ...(tier ? { tier, giftId } : { isUsed: false, version: 2, giftId: null }),
         ...(month ? { month } : { month: null }),
             deletedAt: null,

@@ -3,13 +3,14 @@
     "title": "Bot"
   },
   "common": {
-    "back": "⬅️ Orqaga",
-    "codeNotFound": "Kod topilmadi",
-    "codeAllreadyUsed": "Kod allaqachon ishlatilgan",
-    "codeReal": "Kod haqiqiy"
+    "back": "⬅️ Бозгашт",
+    "codeNotFound": "Код ёфт нашуд",
+    "codeAllreadyUsed": "Код аллакай истифода шудааст",
+    "codeReal": "Код аслӣ аст"
   },
   "validation": {
-    "invalidPhoneNumber": "Раками мобилии худро ворид кунед"
+    "invalidPhoneNumber": "Раками мобилии худро ворид кунед",
+    "invalidFormat": "❌ Шакли нодурусти кодро ворид кардед."
   },
   "auth": {
     "requestName": "Номи худро дохил кунед",
@@ -18,16 +19,16 @@
     "sendContact": "Раками мобилии худро ворид кунед"
   },
   "inlineKeyboard": {
-    "aboutMenu": "Biz haqimizda",
-    "settingsMenu": "⚙️ Sozlamalar",
-    "changeLang": "Tilni o'zgaritirish"
+    "aboutMenu": "Дар бораи мо",
+    "settingsMenu": "⚙️ Танзимот",
+    "changeLang": "Забонро иваз кунед"
   },
 
   "menu": {
-    "title": "HURMATLI MIJOZ\nSiz Valesco avtomobil moyi harid qilib, aksiya qatnashchisiga aylandingiz!\n\nKODNI KIRITING!",
-    "aboutContent": "Biz OOO \"...\" Groupmiz...",
-    "settingsContent": "⚙️ Sozlamalar",
-    "langListContent": "Tilni tanlang"
+    "title": "МӯҳТАРАМ МИЗОҶ\nШумо бо харидани равғани мошини Valesco иштирокчии аксия шудед!\n\nКОДРО ДОХИЛ КУНЕД!",
+    "aboutContent": "Мо гурӯҳи \"...\" ҳастем...",
+    "settingsContent": "⚙️ Танзимот",
+    "langListContent": "Забонро интихоб кунед"
   }
 }
 

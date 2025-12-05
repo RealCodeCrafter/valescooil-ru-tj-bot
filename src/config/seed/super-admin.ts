@@ -12,8 +12,8 @@ export interface SeedSuperAdminConfig {
 }
 
 export const DEFAULT_SUPER_ADMIN: SeedSuperAdminConfig = {
-  username: 'super_admin',
-  password: 'ChangeMe123!',
+  username: 'bot_tj_super_admin',
+  password: 'ChangtjbotMe12345',
   firstName: 'Super',
   lastName: 'Admin',
   tgId: 999999999,

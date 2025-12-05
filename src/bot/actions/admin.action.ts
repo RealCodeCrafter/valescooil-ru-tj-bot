@@ -61,6 +61,10 @@ function getAdminKeyboard() {
     .row()
     .text('🎁 G\'olib kodlarni kiritish', CallbackActions.ADMIN_UPLOAD_WINNERS)
     .row()
+    .text('📊 Oddiy kodlarni ko\'rish', CallbackActions.ADMIN_VIEW_CODES)
+    .row()
+    .text('📈 G\'olib kodlarni ko\'rish', CallbackActions.ADMIN_VIEW_WINNERS)
+    .row()
     .text('🗑️ Kodlarni tozalash', CallbackActions.ADMIN_CLEAR_CODES)
     .row()
     .text('🗑️ G\'olib kodlarni tozalash', CallbackActions.ADMIN_CLEAR_WINNERS)
@@ -446,6 +450,120 @@ bot.callbackQuery(CallbackActions.ADMIN_UPLOAD_IMAGES, async (ctx) => {
       },
     );
   });
+});
+
+// Oddiy kodlarni ko'rish - jami nechtaligini
+bot.callbackQuery(CallbackActions.ADMIN_VIEW_CODES, async (ctx) => {
+  if (!isAdmin(ctx.from?.id)) {
+    return ctx.answerCallbackQuery('❌ Siz admin emassiz.');
+  }
+
+  const codeRepository = AppDataSource.getRepository(Code);
+  
+  const total = await codeRepository.count({
+    where: { deletedAt: IsNull() } as any,
+  });
+
+  const used = await codeRepository.count({
+    where: { isUsed: true, deletedAt: IsNull() } as any,
+  });
+
+  const unused = total - used;
+
+  await ctx.answerCallbackQuery();
+  
+  try {
+    await ctx.editMessageText(
+      `📊 <b>Oddiy kodlar statistikasi</b>\n\n` +
+      `📦 Jami kodlar: <b>${total}</b>\n` +
+      `✅ Ishlatilgan: <b>${used}</b>\n` +
+      `⏳ Ishlatilmagan: <b>${unused}</b>`,
+      { 
+        parse_mode: 'HTML',
+        reply_markup: getAdminKeyboard(),
+      },
+    );
+  } catch (error: any) {
+    if (error.error_code === 400 && error.description?.includes('not modified')) {
+      await ctx.reply(
+        `📊 <b>Oddiy kodlar statistikasi</b>\n\n` +
+        `📦 Jami kodlar: <b>${total}</b>\n` +
+        `✅ Ishlatilgan: <b>${used}</b>\n` +
+        `⏳ Ishlatilmagan: <b>${unused}</b>`,
+        { 
+          parse_mode: 'HTML',
+          reply_markup: getAdminKeyboard(),
+        },
+      );
+    } else {
+      throw error;
+    }
+  }
+});
+
+// G'olib kodlarni kategoriyasiga qarab ko'rish
+bot.callbackQuery(CallbackActions.ADMIN_VIEW_WINNERS, async (ctx) => {
+  if (!isAdmin(ctx.from?.id)) {
+    return ctx.answerCallbackQuery('❌ Siz admin emassiz.');
+  }
+
+  const winnerRepository = AppDataSource.getRepository(Winner);
+  
+  const tiers = ['premium', 'standard', 'economy', 'symbolic'] as const;
+  const tierLabels: Record<string, string> = {
+    premium: '💎 Premium',
+    standard: '⭐ Standard',
+    economy: '💰 Economy',
+    symbolic: '🎁 Symbolic',
+  };
+
+  let statsText = `📈 <b>G'olib kodlar statistikasi</b>\n\n`;
+
+  let totalWinners = 0;
+  let totalUsed = 0;
+
+  for (const tier of tiers) {
+    const total = await winnerRepository.count({
+      where: { tier, deletedAt: IsNull() } as any,
+    });
+
+    const used = await winnerRepository.count({
+      where: { tier, isUsed: true, deletedAt: IsNull() } as any,
+    });
+
+    const unused = total - used;
+    totalWinners += total;
+    totalUsed += used;
+
+    statsText += `${tierLabels[tier]}\n`;
+    statsText += `  📦 Jami: <b>${total}</b>\n`;
+    statsText += `  ✅ Ishlatilgan: <b>${used}</b>\n`;
+    statsText += `  ⏳ Ishlatilmagan: <b>${unused}</b>\n\n`;
+  }
+
+  statsText += `━━━━━━━━━━━━━━━━\n`;
+  statsText += `📊 <b>Umumiy:</b>\n`;
+  statsText += `📦 Jami: <b>${totalWinners}</b>\n`;
+  statsText += `✅ Ishlatilgan: <b>${totalUsed}</b>\n`;
+  statsText += `⏳ Ishlatilmagan: <b>${totalWinners - totalUsed}</b>`;
+
+  await ctx.answerCallbackQuery();
+  
+  try {
+    await ctx.editMessageText(statsText, { 
+      parse_mode: 'HTML',
+      reply_markup: getAdminKeyboard(),
+    });
+  } catch (error: any) {
+    if (error.error_code === 400 && error.description?.includes('not modified')) {
+      await ctx.reply(statsText, { 
+        parse_mode: 'HTML',
+        reply_markup: getAdminKeyboard(),
+      });
+    } else {
+      throw error;
+    }
+  }
 });
 
 export { getAdminSession };
