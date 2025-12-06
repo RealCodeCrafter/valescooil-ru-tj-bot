@@ -27,6 +27,8 @@ const codesRouter = Router()
   .get('/code-month', runAsyncWrapper(codesController.getCodeMonth))
   // Yangi API: Oy tanlansa shu oyga tegishli kodlar chiqadi
   .get('/by-month/:month', runAsyncWrapper(codesController.getCodesByMonth))
+  // Yangi API: Oy va yil tanlansa shu oy va yilga tegishli kodlar chiqadi
+  .get('/by-month-year/:month/:year', runAsyncWrapper(codesController.getCodesByMonthAndYear))
   // Oxirgi route - barcha boshqa routelardan keyin
   .get('/:id', runAsyncWrapper(codesController.getById));
 

@@ -53,6 +53,9 @@ export class Winner {
   @Column({ type: 'varchar', length: 50, nullable: true })
   month!: string | null;
 
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  year!: string | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 

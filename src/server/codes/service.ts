@@ -592,6 +592,61 @@ export class CodeService extends BaseService<Code, CodeDto> {
         usedAt: true,
         usedById: true,
         month: true,
+        year: true,
+        usedBy: {
+          _id: true,
+          tgId: true,
+          tgFirstName: true,
+          tgLastName: true,
+          firstName: true,
+          phoneNumber: true,
+        },
+        gift: {
+          _id: true,
+          id: true,
+          name: true,
+          image: true,
+          images: true,
+          totalCount: true,
+          usedCount: true,
+        },
+      },
+      order: { usedAt: 'DESC', id: 'ASC' },
+    });
+
+    return data as any;
+  }
+
+  // Oy va yil tanlansa shu oy va yilga tegishli kodlar chiqadi
+  async getCodesByMonthAndYear(query: PagingDto, month: string, year: string): Promise<any[]> {
+    const where: any = {
+      deletedAt: IsNull(),
+      month: month,
+      year: year,
+    };
+
+    if (query.search) {
+      const searchNum = parseInt(query.search);
+      if (!isNaN(searchNum)) {
+        where.id = searchNum;
+      } else {
+        where.value = Like(`%${query.search}%`);
+      }
+    }
+
+    const data = await this.repository.find({
+      where,
+      relations: ['usedBy', 'gift'],
+      select: {
+        _id: true,
+        id: true,
+        value: true,
+        giftId: true,
+        isUsed: true,
+        usedAt: true,
+        usedById: true,
+        month: true,
+        year: true,
         usedBy: {
           _id: true,
           tgId: true,

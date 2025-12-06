@@ -44,6 +44,7 @@ async function bulkInsert(
   giftId?: string,
   tier?: string,
   month?: string | null,
+  year?: string | null,
 ) {
   const existing = await repository.find({
     where: { deletedAt: IsNull() } as any,
@@ -82,6 +83,7 @@ async function bulkInsert(
             value: formattedValue,
             ...(tier ? { tier, giftId } : { isUsed: false, version: 2, giftId: null }),
         ...(month ? { month } : { month: null }),
+        ...(year ? { year } : { year: null }),
             deletedAt: null,
     });
     }
@@ -101,6 +103,7 @@ async function saveWinners(
   codes: string[],
   tier: 'premium' | 'standard' | 'economy' | 'symbolic',
   month?: string | null,
+  year?: string | null,
 ) {
   const winnerRepository = AppDataSource.getRepository(Winner);
   const giftRepository = AppDataSource.getRepository(Gift);
@@ -130,12 +133,12 @@ async function saveWinners(
     gift = await giftRepository.save(newGift);
   }
 
-  return bulkInsert(winnerRepository, codes, gift._id, tier, month);
+  return bulkInsert(winnerRepository, codes, gift._id, tier, month, year);
 }
 
-async function saveCodes(codes: string[], month?: string | null) {
+async function saveCodes(codes: string[], month?: string | null, year?: string | null) {
   const codeRepository = AppDataSource.getRepository(Code);
-  return bulkInsert(codeRepository, codes, undefined, undefined, month);
+  return bulkInsert(codeRepository, codes, undefined, undefined, month, year);
 }
 
 // ASOSIY HANDLER
@@ -152,9 +155,11 @@ export const handleDocument = async (ctx: MyContext) => {
   const isWinnerMode = session.mode === 'upload_winners';
   const winnerTier = session.winnerTier;
   const selectedMonth = session.selectedMonth;
+  const selectedYear = session.selectedYear;
 
   if (isWinnerMode && !winnerTier) return ctx.reply('❌ Kategoriya tanlanmagan!');
   if (!selectedMonth) return ctx.reply('❌ Oy tanlanmagan!');
+  if (!selectedYear) return ctx.reply('❌ Yil tanlanmagan!');
 
   try {
     await ctx.reply(isWinnerMode ? `Fayl qabul qilindi, ${winnerTier} kategoriyasidagi g'olib kodlar yuklanmoqda...` : "Fayl qabul qilindi, kodlar yuklanmoqda...");
@@ -175,9 +180,9 @@ export const handleDocument = async (ctx: MyContext) => {
 
     let result;
     if (isWinnerMode) {
-      result = await saveWinners(codes, winnerTier!, selectedMonth);
+      result = await saveWinners(codes, winnerTier!, selectedMonth, selectedYear);
     } else {
-      result = await saveCodes(codes, selectedMonth);
+      result = await saveCodes(codes, selectedMonth, selectedYear);
     }
 
     const codeRepository = AppDataSource.getRepository(Code);
@@ -197,11 +202,15 @@ Jami bazada: <b>${total}</b>
     session.mode = null;
     session.winnerTier = null;
     session.selectedMonth = null;
+    session.selectedYear = null;
+    session.waitingForYear = false;
   } catch (err: any) {
     await ctx.reply(`Xato: ${err.message}`);
     session.mode = null;
     session.winnerTier = null;
     session.selectedMonth = null;
+    session.selectedYear = null;
+    session.waitingForYear = false;
   }
 };
 

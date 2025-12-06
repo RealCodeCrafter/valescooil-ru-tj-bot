@@ -191,6 +191,22 @@ class CodeController {
 
     return res.success(codes);
   }
+
+  // Oy va yil tanlansa shu oy va yilga tegishli kodlar chiqadi
+  public async getCodesByMonthAndYear(req: Request, res: Response) {
+    const month = req.params.month;
+    const year = req.params.year;
+    if (!month || !year) {
+      return res.status(400).json({
+        success: false,
+        message: 'Month and year parameters are required'
+      });
+    }
+    const query = await validateIt(req.query, CodePagingDto, []);
+    const codes = await this.codesService.getCodesByMonthAndYear(query, month, year);
+
+    return res.success(codes);
+  }
 }
 
 export const codesController = new CodeController();

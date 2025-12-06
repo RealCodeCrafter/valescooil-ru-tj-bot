@@ -13,11 +13,13 @@ const adminSessions = new Map<number, {
   imageType: 'premium' | 'standard' | 'economy' | 'symbolic' | null;
   winnerTier: 'premium' | 'standard' | 'economy' | 'symbolic' | null;
   selectedMonth: string | null;
+  selectedYear: string | null;
+  waitingForYear: boolean;
 }>();
 
 function getAdminSession(userId: number) {
   if (!adminSessions.has(userId)) {
-    adminSessions.set(userId, { mode: null, imageType: null, winnerTier: null, selectedMonth: null });
+    adminSessions.set(userId, { mode: null, imageType: null, winnerTier: null, selectedMonth: null, selectedYear: null, waitingForYear: false });
   }
   return adminSessions.get(userId)!;
 }
@@ -81,6 +83,8 @@ bot.callbackQuery(CallbackActions.ADMIN_UPLOAD_CODES, async (ctx) => {
   const session = getAdminSession(ctx.from.id);
   session.mode = 'upload_codes';
   session.selectedMonth = null;
+  session.selectedYear = null;
+  session.waitingForYear = false;
 
   await ctx.answerCallbackQuery('✅ Kodlar kiritish rejimi');
 
@@ -123,6 +127,8 @@ bot.callbackQuery(new RegExp(`^admin_upload_codes_month_(.+)$`), async (ctx) => 
   const session = getAdminSession(ctx.from.id);
   session.mode = 'upload_codes';
   session.selectedMonth = month;
+  session.selectedYear = null;
+  session.waitingForYear = true;
 
   const monthLabel = months.find(m => m.value === month)?.label || month;
 
@@ -130,19 +136,19 @@ bot.callbackQuery(new RegExp(`^admin_upload_codes_month_(.+)$`), async (ctx) => 
   
   try {
     await ctx.editMessageText(
-      `📥 <b>Kodlar kiritish - ${monthLabel}</b>\n\nExcel/CSV/TXT fayl yuboring.\nFayl yuborilgach, kodlar avtomatik ravishda bazaga saqlanadi.`,
+      `📥 <b>Kodlar kiritish - ${monthLabel}</b>\n\nQaysi yilga kodlar kiritmoqchisiz?\n\nYilni yuboring (masalan: 2024, 2025):`,
       { 
         parse_mode: 'HTML',
-        reply_markup: getAdminKeyboard(),
+        reply_markup: new InlineKeyboard().text('⬅️ Orqaga', CallbackActions.ADMIN_UPLOAD_CODES),
       },
     );
   } catch (error: any) {
     if (error.error_code === 400 && error.description?.includes('not modified')) {
       await ctx.reply(
-        `📥 <b>Kodlar kiritish - ${monthLabel}</b>\n\nExcel/CSV/TXT fayl yuboring.\nFayl yuborilgach, kodlar avtomatik ravishda bazaga saqlanadi.`,
+        `📥 <b>Kodlar kiritish - ${monthLabel}</b>\n\nQaysi yilga kodlar kiritmoqchisiz?\n\nYilni yuboring (masalan: 2024, 2025):`,
         { 
           parse_mode: 'HTML',
-          reply_markup: getAdminKeyboard(),
+          reply_markup: new InlineKeyboard().text('⬅️ Orqaga', CallbackActions.ADMIN_UPLOAD_CODES),
         },
       );
     } else {
@@ -160,6 +166,8 @@ bot.callbackQuery(CallbackActions.ADMIN_UPLOAD_WINNERS, async (ctx) => {
   const session = getAdminSession(ctx.from.id);
   session.mode = 'upload_winners';
   session.selectedMonth = null;
+  session.selectedYear = null;
+  session.waitingForYear = false;
 
   const tierKeyboard = new InlineKeyboard()
     .text('💎 Premium', `${CallbackActions.ADMIN_UPLOAD_WINNERS}_premium`)
@@ -208,6 +216,8 @@ bot.callbackQuery(CallbackActions.ADMIN_UPLOAD_WINNERS, async (ctx) => {
     session.mode = 'upload_winners';
     session.winnerTier = tier as any;
     session.selectedMonth = null;
+    session.selectedYear = null;
+    session.waitingForYear = false;
 
     const tierNames: Record<string, string> = {
       premium: '💎 Premium',
@@ -257,6 +267,8 @@ bot.callbackQuery(CallbackActions.ADMIN_UPLOAD_WINNERS, async (ctx) => {
     session.mode = 'upload_winners';
     session.winnerTier = tier as any;
     session.selectedMonth = month;
+    session.selectedYear = null;
+    session.waitingForYear = true;
 
     const tierNames: Record<string, string> = {
       premium: '💎 Premium',
@@ -271,19 +283,19 @@ bot.callbackQuery(CallbackActions.ADMIN_UPLOAD_WINNERS, async (ctx) => {
     
     try {
       await ctx.editMessageText(
-        `${tierNames[tier]} <b>kategoriyasi uchun g'olib kodlarni kiritish - ${monthLabel}</b>\n\nExcel/CSV/TXT fayl yuboring.\nFayl yuborilgach, ${tierNames[tier]} kategoriyasidagi g'olib kodlar avtomatik ravishda bazaga saqlanadi.`,
+        `${tierNames[tier]} <b>kategoriyasi uchun g'olib kodlarni kiritish - ${monthLabel}</b>\n\nQaysi yilga kodlar kiritmoqchisiz?\n\nYilni yuboring (masalan: 2024, 2025):`,
         { 
           parse_mode: 'HTML',
-          reply_markup: getAdminKeyboard(),
+          reply_markup: new InlineKeyboard().text('⬅️ Orqaga', CallbackActions.ADMIN_UPLOAD_WINNERS),
         },
       );
     } catch (error: any) {
       if (error.error_code === 400 && error.description?.includes('not modified')) {
         await ctx.reply(
-          `${tierNames[tier]} <b>kategoriyasi uchun g'olib kodlarni kiritish - ${monthLabel}</b>\n\nExcel/CSV/TXT fayl yuboring.\nFayl yuborilgach, ${tierNames[tier]} kategoriyasidagi g'olib kodlar avtomatik ravishda bazaga saqlanadi.`,
+          `${tierNames[tier]} <b>kategoriyasi uchun g'olib kodlarni kiritish - ${monthLabel}</b>\n\nQaysi yilga kodlar kiritmoqchisiz?\n\nYilni yuboring (masalan: 2024, 2025):`,
           { 
             parse_mode: 'HTML',
-            reply_markup: getAdminKeyboard(),
+            reply_markup: new InlineKeyboard().text('⬅️ Orqaga', CallbackActions.ADMIN_UPLOAD_WINNERS),
           },
         );
       } else {

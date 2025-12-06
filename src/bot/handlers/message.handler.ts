@@ -12,6 +12,7 @@ import { BotLanguage } from '../core/middleware';
 import { Gift } from '../../db/entities/gift.entity';
 import { phoneCheck } from '../helpers/util';
 import { IsNull, In, Or } from 'typeorm';
+import { getAdminSession } from '../actions/admin.action';
 
 type GiftTier = 'premium' | 'standard' | 'economy' | 'symbolic';
 
@@ -327,9 +328,77 @@ async function checkCode(ctx: MyContext) {
 }
 
 // ======================
+// ADMIN YIL QABUL QILISH
+// =====================
+async function handleAdminYearInput(ctx: MyContext) {
+  if (!isAdmin(ctx.from?.id)) return false;
+  
+  const session = getAdminSession(ctx.from.id);
+  if (!session.waitingForYear || !session.selectedMonth) return false;
+  
+  const text = ctx.message?.text?.trim();
+  if (!text) return false;
+  
+  // Yilni tekshirish (4 raqam, masalan: 2024, 2025)
+  const yearMatch = text.match(/^\d{4}$/);
+  if (!yearMatch) {
+    await ctx.reply('❌ Noto\'g\'ri yil format! Yilni 4 raqam bilan yuboring (masalan: 2024, 2025)');
+    return true;
+  }
+  
+  const year = yearMatch[0];
+  session.selectedYear = year;
+  session.waitingForYear = false;
+  
+  const months = [
+    { value: 'yanvar', label: 'Yanvar' },
+    { value: 'fevral', label: 'Fevral' },
+    { value: 'mart', label: 'Mart' },
+    { value: 'aprel', label: 'Aprel' },
+    { value: 'may', label: 'May' },
+    { value: 'iyun', label: 'Iyun' },
+    { value: 'iyul', label: 'Iyul' },
+    { value: 'avgust', label: 'Avgust' },
+    { value: 'sentabr', label: 'Sentabr' },
+    { value: 'oktabr', label: 'Oktabr' },
+    { value: 'noyabr', label: 'Noyabr' },
+    { value: 'dekabr', label: 'Dekabr' },
+  ];
+  
+  const monthLabelFormatted = months.find(m => m.value === session.selectedMonth)?.label || session.selectedMonth;
+  
+  if (session.mode === 'upload_winners') {
+    const tierNames: Record<string, string> = {
+      premium: '💎 Premium',
+      standard: '⭐ Standard',
+      economy: '💰 Economy',
+      symbolic: '🎁 Symbolic',
+    };
+    const tierLabel = tierNames[session.winnerTier || ''] || session.winnerTier;
+    await ctx.reply(
+      `✅ ${tierLabel} kategoriyasi uchun g'olib kodlarni kiritish - ${monthLabelFormatted} ${year}\n\nExcel/CSV/TXT fayl yuboring.\nFayl yuborilgach, ${tierLabel} kategoriyasidagi g'olib kodlar avtomatik ravishda bazaga saqlanadi.`,
+      { parse_mode: 'HTML' }
+    );
+  } else {
+    await ctx.reply(
+      `✅ Kodlar kiritish - ${monthLabelFormatted} ${year}\n\nExcel/CSV/TXT fayl yuboring.\nFayl yuborilgach, kodlar avtomatik ravishda bazaga saqlanadi.`,
+      { parse_mode: 'HTML' }
+    );
+  }
+  
+  return true;
+}
+
+// ======================
 // ASOSIY MESSAGE HANDLER
 // =====================
 const onMessageHandler = async (ctx: MyContext) => {
+  // Admin yil yuborsa - yilni qabul qilamiz
+  if (isAdmin(ctx.from?.id) && ctx.message?.text) {
+    const handled = await handleAdminYearInput(ctx);
+    if (handled) return;
+  }
+  
   // Admin document yuborsa - document handler ishlaydi, bu yerdan o'tkazmaymiz
   if (ctx.message?.document && isAdmin(ctx.from?.id)) {
     return; // document handler ishlaydi
