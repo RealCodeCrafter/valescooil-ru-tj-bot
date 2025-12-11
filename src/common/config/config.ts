@@ -24,6 +24,7 @@ export const ENV = {
     BACKUP_CHANNEL_ID: getOrReturnDefaultNumber(process.env.BACKUP_CHANNEL_ID, -334307783),
   },
   BASE_URL: process.env.BASE_URL || '',
+  BOT_BASE_URL: process.env.BOT_BASE_URL || '',
   HTTP_HOST: process.env.HTTP_HOST || '0.0.0.0',
   HTTP_PORT: getOrReturnDefaultNumber(process.env.HTTP_PORT, 4001),
   JWT_SECRET_ACCESS: process.env.JWT_SECRET || 'JWT_SECRET_ACCESS',

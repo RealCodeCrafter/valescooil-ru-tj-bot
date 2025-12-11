@@ -35,6 +35,7 @@ export class UserAuthService<Dto> extends BaseService<User, Dto> {
       accessToken: await this.signAsync(jwtPayload, 'access'),
       refreshToken: await this.signAsync(jwtPayload, 'refresh'),
       role: user.role,
+      botBaseUrl: ENV.BOT_BASE_URL,
     };
   }
 
